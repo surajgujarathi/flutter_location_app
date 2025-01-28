@@ -102,7 +102,7 @@ Address: ${place.street}, ${place.subLocality}, ${place.locality}, ${place.posta
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Location'),
+        title: const Text('Location App'),
         elevation: 0,
         backgroundColor: Colors.teal,
       ),
