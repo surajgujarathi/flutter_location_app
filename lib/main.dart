@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:image_picker/image_picker.dart'; // Add this import
+import 'dart:io'; // Add this import
 
 void main() {
   runApp(MyApp());
@@ -10,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Location',
+      title: 'Location & Camera',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
@@ -28,6 +30,24 @@ class LocationPage extends StatefulWidget {
 class _LocationPageState extends State<LocationPage> {
   String _locationInfo = 'Tap the button to get your location';
   bool _isLoading = false;
+  File? _image; // Add this variable to store the image
+  final ImagePicker _picker = ImagePicker(); // Add ImagePicker instance
+
+  // Function to capture image
+  Future<void> _captureImage() async {
+    try {
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      if (photo != null) {
+        setState(() {
+          _image = File(photo.path);
+        });
+        // After capturing image, get location automatically
+        await _getCurrentLocation();
+      }
+    } catch (e) {
+      print('Error capturing image: $e');
+    }
+  }
 
   Future<void> _getCurrentLocation() async {
     setState(() {
@@ -37,7 +57,6 @@ class _LocationPageState extends State<LocationPage> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -47,7 +66,6 @@ class _LocationPageState extends State<LocationPage> {
       return;
     }
 
-    // Check and request location permissions
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -70,11 +88,9 @@ class _LocationPageState extends State<LocationPage> {
     }
 
     try {
-      // Get the current position
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
 
-      // Reverse geocoding to get the nearest address
       List<Placemark> placemarks =
           await placemarkFromCoordinates(position.latitude, position.longitude);
 
@@ -102,7 +118,7 @@ Address: ${place.street}, ${place.subLocality}, ${place.locality}, ${place.posta
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Location App'),
+        title: const Text('Location & Camera App'),
         elevation: 0,
         backgroundColor: Colors.teal,
       ),
@@ -112,14 +128,32 @@ Address: ${place.street}, ${place.subLocality}, ${place.locality}, ${place.posta
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.location_on,
-                size: 100,
-                color: Colors.redAccent,
-              ),
+              // Display captured image if available
+              if (_image != null)
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.teal, width: 2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      _image!,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.camera_alt,
+                  size: 100,
+                  color: Colors.teal,
+                ),
               const SizedBox(height: 20),
               const Text(
-                'Your Location',
+                'Location Details',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -151,8 +185,7 @@ Address: ${place.street}, ${place.subLocality}, ${place.locality}, ${place.posta
                             _locationInfo,
                             style: const TextStyle(
                               fontSize: 16,
-                              color: Colors
-                                  .white, // Adjust text color for contrast
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -164,11 +197,29 @@ Address: ${place.street}, ${place.subLocality}, ${place.locality}, ${place.posta
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isLoading ? null : _getCurrentLocation,
-        label: const Text('Get Location'),
-        icon: const Icon(Icons.gps_fixed),
-        backgroundColor: _isLoading ? Colors.grey : Colors.teal,
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: FloatingActionButton(
+              onPressed: _isLoading ? null : _captureImage,
+              backgroundColor: _isLoading ? Colors.grey : Colors.teal,
+              heroTag: 'camera',
+              child: const Icon(Icons.camera_alt),
+            ),
+          ),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          //   child: FloatingActionButton.extended(
+          //     onPressed: _isLoading ? null : _getCurrentLocation,
+          //     label: const Text('Get Location'),
+          //     icon: const Icon(Icons.gps_fixed),
+          //     backgroundColor: _isLoading ? Colors.grey : Colors.teal,
+          //     heroTag: 'location',
+          //   ),
+          // ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
