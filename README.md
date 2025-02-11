@@ -6,6 +6,9 @@ A new Flutter project.
 ## Screenshot 1  
 <img src='https://github.com/surajgujarathi/flutter_location_app/blob/main/assets/sc1.png' height=400/> 
 
+## Screenshot 2
+<img src='https://github.com/surajgujarathi/flutter_location_app/blob/main/assets/sc2.png' height=400/> 
+
 
 This project is a starting point for a Flutter application.
 
